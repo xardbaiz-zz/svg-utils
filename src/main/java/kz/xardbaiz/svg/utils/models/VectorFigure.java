@@ -11,9 +11,11 @@ public class VectorFigure {
 
 	// FILL:
 	private Color nonStrokingColor;
+	private double nonStrokeAlphaConstant = 1.0;
 
 	// STROKING:
 	private Color strokingColor;
+	private double alphaConstant = 1.0;
 	private int strokeWidth = 1;
 	private String lineCap = LineCap.BUTT.name().toLowerCase();
 	private String lineJoin = LineJoin.MITER.name().toLowerCase();
@@ -106,6 +108,22 @@ public class VectorFigure {
 	
 	public void setDashArray(String dashArray) {
 		this.dashArray = dashArray;
+	}
+	
+	public double getNonStrokeAlphaConstant() {
+		return nonStrokeAlphaConstant;
+	}
+
+	public void setNonStrokeAlphaConstant(double nonStrokeAlphaConstant) {
+		this.nonStrokeAlphaConstant = nonStrokeAlphaConstant;
+	}
+
+	public double getAlphaConstant() {
+		return alphaConstant;
+	}
+
+	public void setAlphaConstant(double alphaConstant) {
+		this.alphaConstant = alphaConstant;
 	}
 	
 	

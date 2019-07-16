@@ -12,6 +12,7 @@ import java.io.Writer;
 import org.apache.batik.anim.dom.SVGDOMImplementation;
 import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
+import org.apache.batik.svggen.SVGLine;
 import org.apache.batik.svggen.SVGPath;
 import org.apache.batik.util.SVGConstants;
 import org.w3c.dom.DOMImplementation;
@@ -35,27 +36,35 @@ public class SVGUtils {
 	}
 
 	public static void putPathToSvgDocument(SVGDocument document, GeneralPath path) {
-
 		putPathToSvgDocument(document, new VectorFigure(path, null, Color.BLACK));
 	}
 
 	public static void putPathToSvgDocument(SVGDocument document, VectorFigure figure) {
-
-		if (figure.getNonStrokingColor() == null) {
-			return;
-		}
-
 		SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
-
-		// System.out.println(SVGPath.toSVGPathData(path, ctx));
-
+		
 		SVGPath svgPath = new SVGPath(ctx);
 		Element svgElement = svgPath.toSVG(figure.getFigurePath());
 
-		svgElement.setAttribute(SVGConstants.SVG_FILL_ATTRIBUTE, getRgbColorString(figure.getNonStrokingColor()));
+		Color nonStrokingColor = figure.getNonStrokingColor();
+		if (nonStrokingColor != null) {
+			svgElement.setAttribute(SVGConstants.SVG_FILL_ATTRIBUTE, getRgbColorString(nonStrokingColor));
+			
+			double alphaConstant = figure.getNonStrokeAlphaConstant();
+			if (alphaConstant!=1) {
+				svgElement.setAttribute(SVGConstants.SVG_FILL_OPACITY_ATTRIBUTE, String.valueOf(alphaConstant));
+			}
+		}
+		
+		processStroke(figure, svgElement);
+		setVisibility(figure, svgElement);
+		document.getRootElement().appendChild(svgElement);
+	}
+	
+	private static void processStroke(VectorFigure figure, Element svgElement) {
+
+		Color strokingColor = figure.getStrokingColor();
 
 		// Stroke check
-		Color strokingColor = figure.getStrokingColor();
 		if (strokingColor != null) {
 			svgElement.setAttribute(SVGConstants.SVG_STROKE_ATTRIBUTE, getRgbColorString(strokingColor));
 			svgElement.setAttribute(SVGConstants.SVG_STROKE_WIDTH_ATTRIBUTE, String.valueOf(figure.getStrokeWidth()));
@@ -63,14 +72,26 @@ public class SVGUtils {
 			svgElement.setAttribute(SVGConstants.SVG_STROKE_LINEJOIN_ATTRIBUTE, figure.getLineJoin());
 
 			String dashArray = figure.getDashArray();
-			if (dashArray != null) {
+			if (dashArray != null && !"".equals(dashArray)) {
 				svgElement.setAttribute(SVGConstants.SVG_STROKE_DASHARRAY_ATTRIBUTE, dashArray);
 			}
-			
+
+			double alphaConstant = figure.getAlphaConstant();
+			if (alphaConstant != 1) {
+				svgElement.setAttribute(SVGConstants.SVG_STROKE_OPACITY_ATTRIBUTE, String.valueOf(alphaConstant));
+			}
+
 			// TODO 'stroke-dashoffset'
-			// TODO opacity
 		}
-		document.getRootElement().appendChild(svgElement);
+	}
+	
+	private static void setVisibility(VectorFigure figure, Element svgElement) {
+		// visibility="visible" is default value
+		if (figure.getStrokingColor() == null && figure.getNonStrokingColor() == null) {
+			svgElement.setAttribute(SVGConstants.CSS_VISIBILITY_PROPERTY, SVGConstants.CSS_HIDDEN_VALUE);
+		} else if (figure.getStrokingColor() != null && figure.getNonStrokingColor() == null) {
+			svgElement.setAttribute(SVGConstants.SVG_FILL_ATTRIBUTE, "transparent");
+		}
 	}
 
 	private static String getRgbColorString(Color color) {
